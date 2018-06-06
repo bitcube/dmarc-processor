@@ -78,12 +78,22 @@ def extract_zip(payload):
 
 def gettext(xml, xpath):
   try:
-    return xml.find(xpath).text
+    result = xml.find(xpath).text
   except:
-    return ""
+    result = None
+
+  if result == None:
+    result = ""
+
+  return result.strip()
 
 def getrecords(xml, msg):
-  tree = ET.fromstring(xml)
+  try:
+    tree = ET.fromstring(xml)
+  except:
+    info("      ERROR: Invalid XML", ERROR)
+    return None
+
   records = []
   if "Message-Id" in msg:
     msgid = msg['Message-Id']
@@ -91,38 +101,38 @@ def getrecords(xml, msg):
     msgid = "<Undefined>"
   for xmlrecord in tree.findall("record"):
     record = {
-      "orgname":                gettext(tree, "report_metadata/org_name"),
-      "orgemail":               gettext(tree, "report_metadata/email"),
-      "extra_contact_info":     gettext(tree, "report_metadata/extra_contact_info"),
-      "report_id":              gettext(tree, "report_metadata/report_id"),
-      "date_epoch_begin":       gettext(tree, "report_metadata/date_range/begin"),
-      "date_epoch_end":         gettext(tree, "report_metadata/date_range/end"),
+      "orgname":                gettext(tree, "report_metadata/org_name").replace('"', ''),
+      "orgemail":               gettext(tree, "report_metadata/email").replace('"', ''),
+      "extra_contact_info":     gettext(tree, "report_metadata/extra_contact_info").replace('"', ''),
+      "report_id":              gettext(tree, "report_metadata/report_id").replace('"', ''),
+      "date_epoch_begin":       gettext(tree, "report_metadata/date_range/begin").replace('"', ''),
+      "date_epoch_end":         gettext(tree, "report_metadata/date_range/end").replace('"', ''),
       "date_human_begin":       time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(gettext(tree, "report_metadata/date_range/begin")))),
       "date_human_end":         time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(gettext(tree, "report_metadata/date_range/end")))),
-      "error":                  gettext(tree, "report_metadata/error"),
-      "mail_to":                msg['To'],
-      "mail_from":              msg['From'],
-      "mail_date":              msg['Date'],
-      "mail_msgid":             msgid,
-      "policy_domain":          gettext(tree, "policy_published/domain"),
-      "policy_adkim":           gettext(tree, "policy_published/adkim"),
-      "policy_aspf":            gettext(tree, "policy_published/aspf"),
-      "policy_p":               gettext(tree, "policy_published/p"),
-      "policy_sp":              gettext(tree, "policy_published/sp"),
-      "policy_pct":             gettext(tree, "policy_published/pct"),
-      "source_ip":              gettext(xmlrecord, "row/source_ip"),
-      "evaluated_disposition":  gettext(xmlrecord, "row/policy_evaluated/disposition"),
-      "evaluated_dkim":         gettext(xmlrecord, "row/policy_evaluated/dkim").lower(),
-      "evaluated_spf":          gettext(xmlrecord, "row/policy_evaluated/spf").lower(),
-      "evaluated_reason_type":  gettext(xmlrecord, "row/policy_evaluated/reason/type"),
-      "evaluated_reason_comm":  gettext(xmlrecord, "row/policy_evaluated/reason/comment"),
-      "envelope_to":            gettext(xmlrecord, "identifiers/envelope_to"),
-      "header_from":            gettext(xmlrecord, "identifiers/header_from"),
-      "auth_dkim_domain":       gettext(xmlrecord, "auth_results/dkim/domain"),
-      "auth_dkim_result":       gettext(xmlrecord, "auth_results/dkim/result").lower(),
-      "auth_dkim_human_result": gettext(xmlrecord, "auth_results/dkim/human_result"),
-      "auth_spf_domain":        gettext(xmlrecord, "auth_results/spf/domain"),
-      "auth_spf_result":        gettext(xmlrecord, "auth_results/spf/result").lower(),
+      "error":                  gettext(tree, "report_metadata/error").replace('"', ''),
+      "mail_to":                msg['To'].replace('"', ''),
+      "mail_from":              msg['From'].replace('"', ''),
+      "mail_date":              msg['Date'].replace('"', ''),
+      "mail_msgid":             msgid.replace('"', ''),
+      "policy_domain":          gettext(tree, "policy_published/domain").replace('"', ''),
+      "policy_adkim":           gettext(tree, "policy_published/adkim").replace('"', ''),
+      "policy_aspf":            gettext(tree, "policy_published/aspf").replace('"', ''),
+      "policy_p":               gettext(tree, "policy_published/p").replace('"', ''),
+      "policy_sp":              gettext(tree, "policy_published/sp").replace('"', ''),
+      "policy_pct":             gettext(tree, "policy_published/pct").replace('"', ''),
+      "source_ip":              gettext(xmlrecord, "row/source_ip").replace('"', ''),
+      "evaluated_disposition":  gettext(xmlrecord, "row/policy_evaluated/disposition").replace('"', ''),
+      "evaluated_dkim":         gettext(xmlrecord, "row/policy_evaluated/dkim").lower().replace('"', ''),
+      "evaluated_spf":          gettext(xmlrecord, "row/policy_evaluated/spf").lower().replace('"', ''),
+      "evaluated_reason_type":  gettext(xmlrecord, "row/policy_evaluated/reason/type").replace('"', ''),
+      "evaluated_reason_comm":  gettext(xmlrecord, "row/policy_evaluated/reason/comment").replace('"', ''),
+      "envelope_to":            gettext(xmlrecord, "identifiers/envelope_to").replace('"', ''),
+      "header_from":            gettext(xmlrecord, "identifiers/header_from").replace('"', ''),
+      "auth_dkim_domain":       gettext(xmlrecord, "auth_results/dkim/domain").replace('"', ''),
+      "auth_dkim_result":       gettext(xmlrecord, "auth_results/dkim/result").lower().replace('"', ''),
+      "auth_dkim_human_result": gettext(xmlrecord, "auth_results/dkim/human_result").replace('"', ''),
+      "auth_spf_domain":        gettext(xmlrecord, "auth_results/spf/domain").replace('"', ''),
+      "auth_spf_result":        gettext(xmlrecord, "auth_results/spf/result").lower().replace('"', ''),
     }
     count = int(gettext(xmlrecord, "row/count"))
     info("    Adding records " + str(count) + " times", DEBUG)
@@ -141,7 +151,14 @@ def processattachment(filename, payload, msg):
   else:
     info("    ERROR: Unknown extension: " + ext[1], ERROR)
     return False
+
+  # Seems that sitnet.dk can't send normal xml files
+  data = data.replace('" <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://dmarc.org/dmarc-xml/0.1">', '')
+
   records = getrecords(data, msg)
+  if records == None:
+    return False
+
   if "Message-Id" in msg:
     msgid = msg['From'] + " - " + msg['Message-Id']
   else:
@@ -158,47 +175,48 @@ def processattachment(filename, payload, msg):
     duplicate += 1
     filename = os.path.join(args.output, basename + "-" + str(duplicate) + ".csv")
   info("    Save CSV as: " + filename, VERBOSE)
-  line = '"Organization Name","Organization Email","Extra Contact Info","Report ID","Date Begin (EPOCH)","Date End (EPOCH)","Date Begin (Human)","Date End (Human)","Error","Mail Recipient","Mail Sender","Mail Date","Mail MessageID","Policy: Domain","Policy: ADKIM","Policy: ASPF","Policy: P","Policy: SP","Policy: PCT","Source IP","Evaluated Disposition","Evaluated DKIM","Evaluated SPF","Evaluated Reason","Evaluated Comment","Envelope To","Header From","Auth DKIM Domain","Auth Result DKIM","Auth Human Result DKIM","Auth SPF Domain","Auth Result SPF"\n'
+  line = '"Organization Name","Organization Email","Extra Contact Info","Report ID","Date Begin (EPOCH)","Date End (EPOCH)","Date Begin (Human)","Date End (Human)","Error","Mail Recipient","Mail Sender","Mail Date","Mail MessageID","Policy: Domain","Policy: ADKIM","Policy: ASPF","Policy: P","Policy: SP","Policy: PCT","Source IP","Evaluated Disposition","Evaluated DKIM","Evaluated SPF","Evaluated Reason","Evaluated Comment","Evaluated Combined DKIM:SPF","Envelope To","Header From","Auth DKIM Domain","Auth Result DKIM","Auth Human Result DKIM","Auth SPF Domain","Auth Result SPF"\n'
 
   if not args.nosave:
     fp = open(filename, "w")
     fp.write(line)
   
   for record in records:
-    line = '"' + record['orgname'] + '",'
-    line+= '"' + record['orgemail'] + '",'
-    line+= '"' + record['extra_contact_info'] + '",'
-    line+= '"' + record['report_id'] + '",'
-    line+= '"' + record['date_epoch_begin'] + '",'
-    line+= '"' + record['date_epoch_end'] + '",'
-    line+= '"' + record['date_human_begin'] + '",'
-    line+= '"' + record['date_human_end'] + '",'
-    line+= '"' + record['error'] + '",'
-    line+= '"' + record['mail_to'] + '",'
-    line+= '"' + record['mail_from'] + '",'
-    line+= '"' + record['mail_date'] + '",'
-    line+= '"' + record['mail_msgid'] + '",'
-    line+= '"' + record['policy_domain'] + '",'
-    line+= '"' + record['policy_adkim'] + '",'
-    line+= '"' + record['policy_aspf'] + '",'
-    line+= '"' + record['policy_p'] + '",'
-    line+= '"' + record['policy_sp'] + '",'
-    line+= '"' + record['policy_pct'] + '",'
-    line+= '"' + record['source_ip'] + '",'
-    line+= '"' + record['evaluated_disposition'] + '",'
-    line+= '"' + record['evaluated_dkim'] + '",'
-    line+= '"' + record['evaluated_spf'] + '",'
-    line+= '"' + record['evaluated_reason_type'] + '",'
-    line+= '"' + record['evaluated_reason_comm'] + '",'
-    line+= '"' + record['envelope_to'] + '",'
-    line+= '"' + record['header_from'] + '",'
-    line+= '"' + record['auth_dkim_domain'] + '",'
-    line+= '"' + record['auth_dkim_result'] + '",'
-    line+= '"' + record['auth_dkim_human_result'] + '",'
-    line+= '"' + record['auth_spf_domain'] + '",'
-    line+= '"' + record['auth_spf_result'] + '"'
+    line = '"' + str(record['orgname']) + '",'
+    line+= '"' + str(record['orgemail']) + '",'
+    line+= '"' + str(record['extra_contact_info']) + '",'
+    line+= '"' + str(record['report_id']) + '",'
+    line+= '"' + str(record['date_epoch_begin']) + '",'
+    line+= '"' + str(record['date_epoch_end']) + '",'
+    line+= '"' + str(record['date_human_begin']) + '",'
+    line+= '"' + str(record['date_human_end']) + '",'
+    line+= '"' + str(record['error']) + '",'
+    line+= '"' + str(record['mail_to']) + '",'
+    line+= '"' + str(record['mail_from']) + '",'
+    line+= '"' + str(record['mail_date']) + '",'
+    line+= '"' + str(record['mail_msgid']) + '",'
+    line+= '"' + str(record['policy_domain']) + '",'
+    line+= '"' + str(record['policy_adkim']) + '",'
+    line+= '"' + str(record['policy_aspf']) + '",'
+    line+= '"' + str(record['policy_p']) + '",'
+    line+= '"' + str(record['policy_sp']) + '",'
+    line+= '"' + str(record['policy_pct']) + '",'
+    line+= '"' + str(record['source_ip']) + '",'
+    line+= '"' + str(record['evaluated_disposition']) + '",'
+    line+= '"' + str(record['evaluated_dkim']) + '",'
+    line+= '"' + str(record['evaluated_spf']) + '",'
+    line+= '"' + str(record['evaluated_reason_type']) + '",'
+    line+= '"' + str(record['evaluated_reason_comm']) + '",'
+    line+= '"' + str(record['evaluated_dkim']) + ':' + str(record['evaluated_spf']) + '",'
+    line+= '"' + str(record['envelope_to']) + '",'
+    line+= '"' + str(record['header_from']) + '",'
+    line+= '"' + str(record['auth_dkim_domain']) + '",'
+    line+= '"' + str(record['auth_dkim_result']) + '",'
+    line+= '"' + str(record['auth_dkim_human_result']) + '",'
+    line+= '"' + str(record['auth_spf_domain']) + '",'
+    line+= '"' + str(record['auth_spf_result']) + '"'
     if not args.nosave:
-      fp.write(line + "\n")
+      fp.write(line.replace("\n", "").replace("\r", "") + "\n")
     else:
       print line
   
@@ -268,9 +286,6 @@ def processmailbox(mailbox, to = None, all = False):
   for msgid in msgids:
     counter += 1
     process = int(float(float(counter) / float(len(msgids))) * 100)
-    if PRINTLEVEL == INFO:
-      if process % 5 == 0:
-        info("Processed " + str(counter) + "/" + str(len(msgids)) + " - "  + str(process) + "%", INFO)
     info("Retrieving message " + msgid + "/" + str(len(msgids)) + " - " + str(process) + "%", VERBOSE)
     res, data = mailbox.fetch(msgid, '(RFC822)')
     info("Result of retrieving: " + res, DEBUG)
